@@ -236,6 +236,22 @@ const label = (f: Flow): string => {
 
 const ratio = (f: Flow): number => (f.isFinished ? 1 : f.total ? f.done / f.total : 0)
 
+// The batch counted in steps rather than agents: the batch's agents are the last `total` ones
+// spawned. Each counts the steps it reported, or one when it reported none; a finished one
+// counts all of its steps done.
+const stepsOf = (f: Flow, list: AgentRun[]): Flow => {
+  const batch = f.total ? list.slice(-f.total) : []
+  if (!batch.length) return f
+  let total = 0
+  let done = 0
+  for (const a of batch) {
+    const planned = a.stepTotal || 1
+    total += planned
+    done += a.status !== 'running' ? planned : a.stepTotal ? Math.min(planned, a.stepDone ?? 0) : 0
+  }
+  return { ...f, total, done }
+}
+
 // Deterministic noise so the dither does not shimmer between redraws.
 const noise = (x: number, y: number): number => {
   const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
@@ -303,7 +319,7 @@ const rowSvg = (f: Flow, W: number): string => {
   }
 
   const ticks: string[] = []
-  for (let i = 1; i < f.total; i++) {
+  for (let i = 1; i < f.total && f.total <= 24; i++) {
     const x = Math.round((BAR_W * i) / f.total)
     if (x > fillW + 4) ticks.push(`<rect x="${bx(x, 1.5)}" y="${BAR_H / 2 - 4}" width="1.5" height="8" rx="0.75"/>`)
   }
@@ -743,8 +759,8 @@ export const register: Register = (on, options) => {
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const f = await read($, flow)
-    if (f === null || e.props.hasSurvey) return next(e)
+    const batch = await read($, flow)
+    if (batch === null || e.props.hasSurvey) return next(e)
     // Draw this row with the other mods' bands beneath it. Claude Code's own placeholder ({ type: 'engine' }) is
     // never nested: the desktop drops a band that nests it.
     const drawn = await Promise.resolve(next(e)).catch(() => null)
@@ -754,6 +770,7 @@ export const register: Register = (on, options) => {
     const ui = $.ui.resolve(e)
     const { Box, Text, Button } = ui
     const list = await read($, agents)
+    const f = stepsOf(batch, list)
     const p: Panel = await read($, panel)
     const at = Math.max(await read($, now), ...list.map(a => a.startedAt), 0)
     const isWorking = list.some(a => a.status === 'running')

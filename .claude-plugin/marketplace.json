@@ -12,7 +12,7 @@
       "name": "agents-progress",
       "source": "./",
       "description": "Mod: progress bar above the prompt whenever subagents run, a mascot per model, and the list of subagents with steps, cost, tokens and time.",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "category": "mod"
     }
   ]

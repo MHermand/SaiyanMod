@@ -33,7 +33,7 @@ Answer `y` to add the marketplace, then pick a scope (the user scope comes first
 
 ## What it does
 
-- **Progress bar**: appears as soon as a subagent starts and counts the batch, finished out of started. Once none runs, it turns green ("Done"); the next subagent starts a new batch. ✕ hides it; the next agent brings it back.
+- **Progress bar**: appears as soon as a subagent starts and counts the batch's steps, done out of planned: the steps each subagent reports, or one for a subagent that reports none. Once none runs, it turns green ("Done"); the next subagent starts a new batch. ✕ hides it; the next agent brings it back.
 - **Mascot and count**: beside the bar, `×N` with the head of the strongest model among this turn's agents, finished or not.
 - **Agents list**: the ▶ arrow beside ✕ (or `/agents-info`) folds it out under the bar: one compact row per subagent, newest first and three at a time, with its mascot, model, effort and steps, then cost, tokens and time; the bar under each row says whether it still runs. Under the rows, the turn's estimated cost, tokens and time, with ▲ ▼ to reach older agents and a flag that switches the mod's language. The list starts folded. Each prompt you send folds it and, once the next agent starts, keeps only the agents that were running when you sent it, plus the new ones.
 - **Step reporting**: every subagent's brief gets one line asking it to report its steps with `mcp__agents-progress__step`, which draws its own bar in the list. A subagent that does not report shows its context fill in grey.
