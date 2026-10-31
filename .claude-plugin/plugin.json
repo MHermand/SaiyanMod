@@ -1,0 +1,74 @@
+{
+  "name": "agents-progress",
+  "version": "0.5.0",
+  "description": "Progress bar above the prompt whenever subagents run, with a spiky-haired mascot per model that powers up from Haiku to Fable; its arrow folds out the list of subagents with model, steps, cost, tokens and time. Adapted from savvy-progress, without savvy-flow.",
+  "author": {
+    "name": "MHermand",
+    "url": "https://github.com/MHermand"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "language": {
+      "type": "string",
+      "title": "Language",
+      "description": "auto follows Claude Code's language setting, then the system locale; en, fr, ru or he (Hebrew, drawn right to left)",
+      "default": "auto",
+      "options": [
+        "auto",
+        "en",
+        "fr",
+        "ru",
+        "he"
+      ]
+    },
+    "formHaiku": {
+      "type": "string",
+      "title": "Mascot form for Haiku agents",
+      "description": "Which head the mascot wears on Haiku: base (Normal: black hair, no aura), charged (golden hair and aura), super (blue hair, bolts) or ultimate (red hair, flames, streaks)",
+      "default": "base",
+      "options": [
+        "base",
+        "charged",
+        "super",
+        "ultimate"
+      ]
+    },
+    "formSonnet": {
+      "type": "string",
+      "title": "Mascot form for Sonnet agents",
+      "description": "Which head the mascot wears on Sonnet: base (Normal: black hair, no aura), charged (golden hair and aura), super (blue hair, bolts) or ultimate (red hair, flames, streaks)",
+      "default": "charged",
+      "options": [
+        "base",
+        "charged",
+        "super",
+        "ultimate"
+      ]
+    },
+    "formOpus": {
+      "type": "string",
+      "title": "Mascot form for Opus agents",
+      "description": "Which head the mascot wears on Opus: base (Normal: black hair, no aura), charged (golden hair and aura), super (blue hair, bolts) or ultimate (red hair, flames, streaks)",
+      "default": "super",
+      "options": [
+        "base",
+        "charged",
+        "super",
+        "ultimate"
+      ]
+    },
+    "formFable": {
+      "type": "string",
+      "title": "Mascot form for Fable agents",
+      "description": "Which head the mascot wears on Fable: base (Normal: black hair, no aura), charged (golden hair and aura), super (blue hair, bolts) or ultimate (red hair, flames, streaks)",
+      "default": "ultimate",
+      "options": [
+        "base",
+        "charged",
+        "super",
+        "ultimate"
+      ]
+    }
+  },
+  "license": "MIT"
+}
