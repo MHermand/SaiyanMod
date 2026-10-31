@@ -2,16 +2,16 @@
 
 A Claude Code mod (`agents-progress`): a progress bar above the prompt whenever subagents run, the list of subagents folded out under it, and a spiky-haired mascot per model that powers up from Haiku to Fable. Adapted from [savvy-progress](https://github.com/JohnnyVizz/claude-kit/tree/main/plugins/savvy-progress) by johnnyvizz (MIT), with the savvy-flow coupling removed.
 
-![Four subagents started one after the other, from Haiku to Fable: the bar's head powers up as each one joins](docs/demo.gif)
+![Four subagents started one after the other, from Haiku to Fable: the bar's head powers up as each one joins](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/demo.gif)
 
-Four subagents started one after the other, Haiku, Sonnet, Opus, then Fable: the head beside `×N` powers up as each stronger model joins. [Full-quality MP4](docs/demo.mp4).
+Four subagents started one after the other, Haiku, Sonnet, Opus, then Fable: the head beside `×N` powers up as each stronger model joins. [Full-quality MP4](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/demo.mp4).
 
 ## Screenshots
 
 | | While the agents run | Once they are done |
 | --- | --- | --- |
-| **Collapsed** | ![Collapsed bar while the agents run](docs/screenshots/01-collapsed-running.png) | ![Collapsed bar once the agents are done](docs/screenshots/04-collapsed-done.png) |
-| **Unfolded** | ![Agents list while the agents run](docs/screenshots/02-list-running.png) | ![Agents list once the agents are done](docs/screenshots/03-list-done.png) |
+| **Collapsed** | ![Collapsed bar while the agents run](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/screenshots/01-collapsed-running.png) | ![Collapsed bar once the agents are done](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/screenshots/04-collapsed-done.png) |
+| **Unfolded** | ![Agents list while the agents run](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/screenshots/02-list-running.png) | ![Agents list once the agents are done](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/screenshots/03-list-done.png) |
 
 The bar wears the head of the strongest model of the turn (here Fable). Each head is animated while its agent works, then stands still with its aura dimmed.
 
@@ -60,4 +60,4 @@ In `/config`, or in `~/.claude/settings.json`:
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/MHermand/SaiyanMod/blob/main/LICENSE).
