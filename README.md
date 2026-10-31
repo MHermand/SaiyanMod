@@ -2,7 +2,9 @@
 
 A Claude Code mod (`agents-progress`): a progress bar above the prompt whenever subagents run, the list of subagents folded out under it, and a spiky-haired mascot per model that powers up from Haiku to Fable. Adapted from [savvy-progress](https://github.com/JohnnyVizz/claude-kit/tree/main/plugins/savvy-progress) by johnnyvizz (MIT), with the savvy-flow coupling removed.
 
-![The agents list while four subagents run, one per model](docs/screenshots/02-list-running.png)
+![Four subagents started one after the other, from Haiku to Fable: the bar's head powers up as each one joins](docs/demo.gif)
+
+Four subagents started one after the other, Haiku, Sonnet, Opus, then Fable: the head beside `×N` powers up as each stronger model joins. [Full-quality MP4](docs/demo.mp4).
 
 ## Screenshots
 
