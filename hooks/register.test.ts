@@ -20,6 +20,7 @@ const countOf = async (m: { findAll: (q: { type: string }) => Promise<unknown[]>
 for (const surface of ['terminal', 'desktop'] as const) {
   test(`${surface}: any subagent drives the bar, and a batch finishes when none runs`, async ($, on) => {
     mock.clock(on)
+    mock.store(on)
     const opened: string[] = []
     on('ui.open', (_$, e) => {
       opened.push(e.id)
@@ -121,6 +122,33 @@ for (const surface of ['terminal', 'desktop'] as const) {
     expect(text2).not.toContain('Work a3')
     await listed2.unmount()
 
+    // The flag at the foot of the list cycles US, FR, ES and back, keeps its pick in the store,
+    // and the list speaks the flag's language.
+    const flagOf = async () => {
+      const m = await $.ui.mount({ plugin: PLUGIN, surface, component: 'AbovePrompt', props: band })
+      const label = (await m.find({ key: 'savvy-lang' }))?.props.label
+      const words = JSON.stringify(await m.findAll({ type: 'Text' }))
+      return { m, label, words }
+    }
+    const us = await flagOf()
+    expect(us.label).toBe('🇺🇸')
+    expect(us.words).toContain('Cost')
+    await us.m.press({ key: 'savvy-lang' })
+    await us.m.unmount()
+    const fr = await flagOf()
+    expect(fr.label).toBe('🇫🇷')
+    expect(fr.words).toContain('Coût')
+    await fr.m.press({ key: 'savvy-lang' })
+    await fr.m.unmount()
+    const es = await flagOf()
+    expect(es.label).toBe('🇪🇸')
+    expect(es.words).toContain('Coste')
+    await es.m.press({ key: 'savvy-lang' })
+    await es.m.unmount()
+    const usAgain = await flagOf()
+    expect(usAgain.label).toBe('🇺🇸')
+    await usAgain.m.unmount()
+
     // ✕ hides the bar; the next agent brings it back.
     const bar = await $.ui.mount({ plugin: PLUGIN, surface, component: 'AbovePrompt', props: band })
     await bar.press({ key: 'savvy-dismiss' })
@@ -130,3 +158,19 @@ for (const surface of ['terminal', 'desktop'] as const) {
     expect(await back.find({ key: 'savvy-agents' })).toBeTruthy()
   })
 }
+
+test('a flag picked in an earlier session is the next session’s language', async ($, on) => {
+  mock.clock(on)
+  // The store as an earlier session left it, after a press on the flag.
+  mock.store(on, { language: 'fr' })
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('agent.spawn', (_$, e) => ({ model: 'claude-sonnet-5-5', agentId: e.tool_use_id.replace('t-', '') }) as never)
+  await $.session.start({ cwd: '/tmp', surface: 'desktop', isInteractive: true })
+  await $.agent.spawn(spawn('b1', 'general-purpose') as never)
+  const m = await $.ui.mount({ plugin: PLUGIN, surface: 'terminal', component: 'AbovePrompt', props: band })
+  await m.press({ key: 'savvy-agents' })
+  await m.unmount()
+  const open = await $.ui.mount({ plugin: PLUGIN, surface: 'terminal', component: 'AbovePrompt', props: band })
+  expect((await open.find({ key: 'savvy-lang' }))?.props.label).toBe('🇫🇷')
+  expect(JSON.stringify(await open.findAll({ type: 'Text' }))).toContain('Coût')
+})

@@ -1,6 +1,6 @@
 {
   "name": "agents-progress",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Progress bar above the prompt whenever subagents run, with a spiky-haired mascot per model that powers up from Haiku to Fable; its arrow folds out the list of subagents with model, steps, cost, tokens and time. Adapted from savvy-progress, without savvy-flow.",
   "author": {
     "name": "MHermand",
@@ -11,12 +11,13 @@
     "language": {
       "type": "string",
       "title": "Language",
-      "description": "auto follows Claude Code's language setting, then the system locale; en, fr, ru or he (Hebrew, drawn right to left)",
+      "description": "The language before any flag is picked; the flag at the foot of the agents list (US, FR, ES) sets it and is remembered across sessions. auto is English; en, fr, es, ru or he (Hebrew, drawn right to left)",
       "default": "auto",
       "options": [
         "auto",
         "en",
         "fr",
+        "es",
         "ru",
         "he"
       ]

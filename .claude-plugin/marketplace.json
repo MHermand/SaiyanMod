@@ -1,13 +1,18 @@
 {
   "name": "saiyan-mod",
-  "owner": { "name": "MHermand", "url": "https://github.com/MHermand" },
-  "metadata": { "description": "agents-progress: a subagents progress bar for Claude Code, with a mascot per model that powers up from Haiku to Fable." },
+  "owner": {
+    "name": "MHermand",
+    "url": "https://github.com/MHermand"
+  },
+  "metadata": {
+    "description": "agents-progress: a subagents progress bar for Claude Code, with a mascot per model that powers up from Haiku to Fable."
+  },
   "plugins": [
     {
       "name": "agents-progress",
       "source": "./",
       "description": "Mod: progress bar above the prompt whenever subagents run, a mascot per model, and the list of subagents with steps, cost, tokens and time.",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "category": "mod"
     }
   ]

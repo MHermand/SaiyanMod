@@ -26,7 +26,7 @@ const DONE = '#5fbf8f'
 // Language: the `language` option, else Claude Code's `language` setting, else the
 // process locale; English when nothing says French, Hebrew or Russian.
 
-type Lang = 'en' | 'fr' | 'ru' | 'he'
+type Lang = 'en' | 'fr' | 'es' | 'ru' | 'he'
 
 const STRINGS = {
   en: {
@@ -88,6 +88,36 @@ const STRINGS = {
     busy: 'en cours',
     tier: { light: 'light', medium: 'medium', careful: 'careful', heavy: 'heavy', fable: 'fable', other: 'other' },
     effort: { low: 'faible', medium: 'moyen', high: 'élevé', xhigh: 'très élevé', max: 'max' },
+  },
+  es: {
+    pane: 'Agentes',
+    cost: 'Coste',
+    tokens: 'Tokens',
+    time: 'Tiempo',
+    collapse: 'Contraer',
+    expand: 'Desplegar',
+    running: 'En curso',
+    finished: 'Terminados',
+    planned: 'Previstos',
+    empty: 'Aún no hay subagentes.',
+    round: 'ronda',
+    failed: 'error',
+    after: 'después',
+    tokensWord: 'tokens',
+    agentsCount: 'agentes',
+    isRunning: 'en curso',
+    isFinished: 'terminado',
+    isPlanned: 'previsto',
+    opened: 'Panel de agentes abierto.',
+    closed: 'Panel de agentes cerrado.',
+    done: 'Terminado',
+    plan: 'Plan',
+    design: 'Diseño',
+    tasks: 'Tareas',
+    review: 'Revisión',
+    busy: 'en curso',
+    tier: { light: 'light', medium: 'medium', careful: 'careful', heavy: 'heavy', fable: 'fable', other: 'other' },
+    effort: { low: 'bajo', medium: 'medio', high: 'alto', xhigh: 'muy alto', max: 'máx' },
   },
   ru: {
     pane: 'Агенты',
@@ -161,21 +191,27 @@ const isRtl = () => lang === 'he'
 // Effort words as shown; anything unknown shows as it came.
 const effortWord = (effort: string): string => (tr().effort as Record<string, string>)[effort] ?? effort
 
-const isFrench = (v: unknown): boolean => typeof v === 'string' && /^(fr|french|fran[cç]ais)/i.test(v.trim())
-const isRussian = (v: unknown): boolean => typeof v === 'string' && /^(ru|russian|рус)/i.test(v.trim())
-const isHebrew = (v: unknown): boolean => typeof v === 'string' && /^(he|iw|hebrew|עברית)/i.test(v.trim())
-const langOf = (v: unknown): Lang => (isFrench(v) ? 'fr' : isHebrew(v) ? 'he' : isRussian(v) ? 'ru' : 'en')
+const LANGS: readonly Lang[] = ['en', 'fr', 'es', 'ru', 'he']
+const isLang = (v: unknown): v is Lang => LANGS.includes(v as Lang)
 
+// The flag at the foot of the list cycles these; its pick is kept in the store, across sessions.
+const FLAGS: readonly [Lang, string][] = [['en', '🇺🇸'], ['fr', '🇫🇷'], ['es', '🇪🇸']]
+const LANG_KEY = 'language'
+
+// The flag's last pick; before any, the `language` setting; else English.
 async function detectLang($: EngineInterface, option: unknown): Promise<Lang> {
-  if (option === 'en' || option === 'fr' || option === 'ru' || option === 'he') return option
-  try {
-    const settings = (await $.settings.read()) as Record<string, unknown>
-    if (typeof settings.language === 'string' && settings.language.trim()) return langOf(settings.language)
-  } catch {
-    // No settings: fall through to the locale.
-  }
-  const locale = (await $.env.get('LC_ALL')) || (await $.env.get('LC_MESSAGES')) || (await $.env.get('LANG'))
-  return langOf(locale)
+  const picked = await $.store.get(LANG_KEY)
+  if (isLang(picked)) return picked
+  return isLang(option) ? option : 'en'
+}
+
+// Moves the flag on to the next language, keeps the pick and redraws the band.
+async function nextLang($: EngineInterface): Promise<void> {
+  const at = FLAGS.findIndex(([l]) => l === lang)
+  lang = (FLAGS[(at + 1) % FLAGS.length] ?? FLAGS[0])?.[0] ?? 'en'
+  await $.store.set(LANG_KEY, lang)
+  await update($, flow, prev => (prev ? { ...prev, title: tr().pane } : prev))
+  await update($, panel, prev => ({ ...prev }))
 }
 
 // A batch: the subagents started since the bar was last finished or dismissed.
@@ -249,7 +285,6 @@ const rowSvg = (f: Flow, W: number): string => {
   const color = f.isFinished ? DONE : ACCENT
   const y0 = (H - BAR_H) / 2
   const fillW = Math.round(BAR_W * ratio(f))
-  const runW = f.total ? Math.round((BAR_W * Math.min(f.total, f.done + f.running)) / f.total) : 0
   const dots: string[] = []
   // Positions are worked out left to right; right to left mirrors each box
   // inside the bar (`bx`) and across the row (`rx`). Text is never mirrored.
@@ -264,13 +299,6 @@ const rowSvg = (f: Flow, W: number): string => {
     const density = 0.35 + 0.6 * Math.pow(c / Math.max(1, cols), 1.2)
     for (let r = 0; r < rows; r++) {
       if (noise(c, r) < density) dots.push(`<rect class="t${Math.floor(noise(r, c) * 4)}" x="${bx(c * CELL + 1, 2)}" y="${r * CELL + 1}" width="2" height="2"/>`)
-    }
-  }
-  // Handed to workers, not yet accepted: a faint second layer.
-  const faint: string[] = []
-  for (let c = cols; c < Math.floor(runW / CELL); c++) {
-    for (let r = 0; r < rows; r++) {
-      if (noise(c + 7, r + 3) < 0.2) faint.push(`<rect class="t${Math.floor(noise(r + 5, c) * 4)}" x="${bx(c * CELL + 1, 1.7)}" y="${r * CELL + 1}" width="1.7" height="1.7"/>`)
     }
   }
 
@@ -305,7 +333,6 @@ const rowSvg = (f: Flow, W: number): string => {
 <rect class="k" width="${BAR_W}" height="${BAR_H}" rx="${BAR_H / 2}"/>
 <g clip-path="url(#c)">
 <g fill="${color}">${dots.join('')}</g>
-<g fill="${color}" opacity="0.45">${faint.join('')}</g>
 <g class="tk">${ticks.join('')}</g>
 </g>
 <rect x="${pillX}" width="${pillW}" height="${BAR_H}" rx="${BAR_H / 2}" fill="${color}"/>
@@ -752,13 +779,16 @@ export const register: Register = (on, options) => {
             </Box>
           ))}
         </Box>
-        {shown.length > LIST_ROWS && (
-          <Box flexDirection="row" alignItems="center" gap={1}>
-            <Button key="savvy-up" label="▲" plain onPress={() => void scrollList($, -LIST_ROWS, shown.length)} />
-            <Text dimColor>{`${offset + 1}–${offset + page.length} / ${shown.length}`}</Text>
-            <Button key="savvy-down" label="▼" plain onPress={() => void scrollList($, LIST_ROWS, shown.length)} />
-          </Box>
-        )}
+        <Box flexDirection={isRtl() ? 'row-reverse' : 'row'} alignItems="center" gap={1}>
+          {shown.length > LIST_ROWS && (
+            <Box flexDirection="row" alignItems="center" gap={1}>
+              <Button key="savvy-up" label="▲" plain onPress={() => void scrollList($, -LIST_ROWS, shown.length)} />
+              <Text dimColor>{`${offset + 1}–${offset + page.length} / ${shown.length}`}</Text>
+              <Button key="savvy-down" label="▼" plain onPress={() => void scrollList($, LIST_ROWS, shown.length)} />
+            </Box>
+          )}
+          <Button key="savvy-lang" label={FLAGS.find(([l]) => l === lang)?.[1] ?? '🌐'} plain onPress={() => void nextLang($)} />
+        </Box>
       </Box>
     )
 
