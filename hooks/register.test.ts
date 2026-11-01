@@ -174,3 +174,26 @@ test('a flag picked in an earlier session is the next session’s language', asy
   expect((await open.find({ key: 'savvy-lang' }))?.props.label).toBe('🇫🇷')
   expect(JSON.stringify(await open.findAll({ type: 'Text' }))).toContain('Coût')
 })
+
+test('the bar counts the steps the agents report, an agent reporting none as one', async ($, on) => {
+  mock.clock(on)
+  mock.store(on)
+  on('agent.spawn', (_$, e) => ({ model: 'claude-sonnet-5-5', agentId: e.tool_use_id.replace('t-', '') }) as never)
+  on('turn.complete', () => ({ text: '' }) as never)
+  for (const id of ['c1', 'c2', 'c3']) await $.agent.spawn(spawn(id, 'general-purpose') as never)
+  // c1 plans five steps and has done two; c2 and c3 report none.
+  await $.tool.call({ tool: 'mcp__agents-progress__step', agentId: 'c1', done: 2, total: 5 } as never)
+  const barOf = async () => {
+    const m = await $.ui.mount({ plugin: PLUGIN, surface: 'terminal', component: 'AbovePrompt', props: band })
+    const words = JSON.stringify(await m.findAll({ type: 'Text' }))
+    await m.unmount()
+    return words
+  }
+  expect(await barOf()).toContain('Tasks 2/7')
+  // c2 finishes: its one step is done.
+  await $.turn.complete({ agentId: 'c2', reason: 'answer' } as never)
+  expect(await barOf()).toContain('Tasks 3/7')
+  // c1 finishes: all five of its steps count as done.
+  await $.turn.complete({ agentId: 'c1', reason: 'answer' } as never)
+  expect(await barOf()).toContain('Tasks 6/7')
+})

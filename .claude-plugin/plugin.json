@@ -1,6 +1,6 @@
 {
   "name": "agents-progress",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Progress bar above the prompt whenever subagents run, with a spiky-haired mascot per model that powers up from Haiku to Fable; its arrow folds out the list of subagents with model, steps, cost, tokens and time. Adapted from savvy-progress, without savvy-flow.",
   "author": {
     "name": "MHermand",
