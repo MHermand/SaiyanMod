@@ -1,0 +1,27 @@
+{
+  "name": "usage-limits",
+  "version": "0.1.0",
+  "description": "A slim band above the prompt with your plan's usage limits: the 5-hour window and the week, how much is used, when each resets, and whether your pace will hit the limit before then. Alerts at 75% and 90% and when the pace runs ahead.",
+  "author": {
+    "name": "MHermand",
+    "url": "https://github.com/MHermand"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "language": {
+      "type": "string",
+      "title": "Language",
+      "description": "The language before any flag is picked; the flag in the unfolded band (US, FR, ES) sets it and is remembered across sessions. auto follows Claude Code's language setting (French or Spanish when it is, else English); en, fr or es picks one",
+      "default": "auto",
+      "options": ["auto", "en", "fr", "es"]
+    },
+    "alerts": {
+      "type": "string",
+      "title": "Alerts",
+      "description": "on shows a toast once per window at 75% and 90% used, and when the pace will reach the limit before the reset; off shows none",
+      "default": "on",
+      "options": ["on", "off"]
+    }
+  },
+  "license": "MIT"
+}

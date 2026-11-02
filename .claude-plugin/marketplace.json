@@ -5,7 +5,7 @@
     "url": "https://github.com/MHermand"
   },
   "metadata": {
-    "description": "agents-progress: a subagents progress bar for Claude Code, with a mascot per model that powers up from Haiku to Fable."
+    "description": "Claude Code mods by MHermand: agents-progress, a subagents progress bar with a mascot per model that powers up from Haiku to Fable; usage-limits, your plan usage limits and pace above the prompt."
   },
   "plugins": [
     {
@@ -13,6 +13,13 @@
       "source": "./",
       "description": "Mod: progress bar above the prompt whenever subagents run, a mascot per model, and the list of subagents with steps, cost, tokens and time.",
       "version": "0.7.0",
+      "category": "mod"
+    },
+    {
+      "name": "usage-limits",
+      "source": "./usage-limits",
+      "description": "Mod: a slim band above the prompt with your plan usage limits, the 5-hour session and the week: how much is used, when each resets, and whether your pace reaches the limit before then; alerts at 75% and 90%.",
+      "version": "0.1.0",
       "category": "mod"
     }
   ]

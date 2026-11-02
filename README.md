@@ -58,6 +58,16 @@ In `/config`, or in `~/.claude/settings.json`:
 { "pluginConfigs": { "agents-progress": { "options": { "language": "fr", "formHaiku": "super" } } } }
 ```
 
+## Also in this marketplace
+
+**[usage-limits](https://github.com/MHermand/SaiyanMod/tree/main/usage-limits#readme)**: a slim band above the prompt with your Claude plan's usage limits, the 5-hour session and the week: how much is used, when each resets, and whether your pace will reach the limit before then, with alerts at 75% and 90%. Its band stacks with this one.
+
+![usage-limits band: 5 h at 33%, resets in 51m; week at 11%, resets in 5d 4h](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/usage-limits/docs/screenshots/on-track-dark.png)
+
+```
+/plugin install usage-limits --marketplace MHermand/SaiyanMod
+```
+
 ## License
 
 MIT. See [LICENSE](https://github.com/MHermand/SaiyanMod/blob/main/LICENSE).
