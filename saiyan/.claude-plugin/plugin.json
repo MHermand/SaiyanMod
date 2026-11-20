@@ -1,0 +1,55 @@
+{
+  "name": "saiyan",
+  "version": "1.0.0",
+  "description": "One bar above the prompt with two views: your plan's usage limits and pace, and the subagents' progress with a spiky-haired mascot per model. Ctrl+A or Option+A opens and closes it; the ⇄ before the fold toggle switches the view, and a click on the mascot picks the model and effort (Option+M, Option+E change them at once).",
+  "author": {
+    "name": "MHermand",
+    "url": "https://github.com/MHermand"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "language": {
+      "type": "string",
+      "title": "Language",
+      "description": "The language before any flag is picked; the flag in the bar (US, FR, ES) sets it and is remembered across sessions. auto follows Claude Code's language setting (French or Spanish when it is, else English); en, fr, es, ru or he (Hebrew, drawn right to left) picks one. The usage view and the model choice speak English for ru and he",
+      "default": "auto",
+      "options": ["auto", "en", "fr", "es", "ru", "he"]
+    },
+    "alerts": {
+      "type": "string",
+      "title": "Usage alerts",
+      "description": "on shows a toast once per window at 75% and 90% used, and when the pace will reach the limit before the reset; off shows none",
+      "default": "on",
+      "options": ["on", "off"]
+    },
+    "formHaiku": {
+      "type": "string",
+      "title": "Mascot form for Haiku",
+      "description": "Which head the mascot wears on Haiku: base (Normal: black hair, no aura), charged (golden hair and aura), super (blue hair, bolts) or ultimate (red hair, flames, streaks)",
+      "default": "base",
+      "options": ["base", "charged", "super", "ultimate"]
+    },
+    "formSonnet": {
+      "type": "string",
+      "title": "Mascot form for Sonnet",
+      "description": "Which head the mascot wears on Sonnet",
+      "default": "charged",
+      "options": ["base", "charged", "super", "ultimate"]
+    },
+    "formOpus": {
+      "type": "string",
+      "title": "Mascot form for Opus",
+      "description": "Which head the mascot wears on Opus",
+      "default": "super",
+      "options": ["base", "charged", "super", "ultimate"]
+    },
+    "formFable": {
+      "type": "string",
+      "title": "Mascot form for Fable",
+      "description": "Which head the mascot wears on Fable",
+      "default": "ultimate",
+      "options": ["base", "charged", "super", "ultimate"]
+    }
+  },
+  "license": "MIT"
+}

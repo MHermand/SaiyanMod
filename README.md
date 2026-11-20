@@ -1,12 +1,28 @@
 # SaiyanMod
 
+Claude Code mods. The one to install is **saiyan**; agents-progress and usage-limits, below, are the two mods it replaces.
+
+## saiyan
+
+One bar above the prompt with two views, your Claude plan's usage limits and the subagents' progress, and a spiky-haired mascot that wears the model and the effort you work with. A click on the mascot picks the model and the effort for your next message.
+
+![The limits row: 5 h at 33%, resets in 51m; weekly at 11%, resets in 5d 4h. Under it, the models, Opus picked in blue, and the effort as five dots](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/saiyan/docs/bar-and-choice.png)
+
+```
+/plugin install saiyan --marketplace MHermand/SaiyanMod
+```
+
+Its screenshots, what it does and its settings: [saiyan/README.md](https://github.com/MHermand/SaiyanMod/tree/main/saiyan#readme). With agents-progress or usage-limits installed, turn them off, or their bands stack with it.
+
+## agents-progress, replaced by saiyan
+
 A Claude Code mod (`agents-progress`): a progress bar above the prompt whenever subagents run, the list of subagents folded out under it, and a spiky-haired mascot per model that powers up from Haiku to Fable. Adapted from [savvy-progress](https://github.com/JohnnyVizz/claude-kit/tree/main/plugins/savvy-progress) by johnnyvizz (MIT), with the savvy-flow coupling removed.
 
 ![Four subagents started one after the other, from Haiku to Fable: the bar's head powers up as each one joins](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/demo.gif)
 
 Four subagents started one after the other, Haiku, Sonnet, Opus, then Fable: the head beside `×N` powers up as each stronger model joins. [Full-quality MP4](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/demo.mp4).
 
-## Screenshots
+### Screenshots
 
 | | While the agents run | Once they are done |
 | --- | --- | --- |
@@ -15,7 +31,7 @@ Four subagents started one after the other, Haiku, Sonnet, Opus, then Fable: the
 
 The bar wears the head of the strongest model of the turn (here Fable). Each head is animated while its agent works, then stands still with its aura dimmed.
 
-## Install
+### Install
 
 At the prompt of a Claude Code terminal session:
 
@@ -31,7 +47,7 @@ claude plugin install agents-progress --marketplace MHermand/SaiyanMod
 
 Answer `y` to add the marketplace, then pick a scope (the user scope comes first). In the desktop app, where `/plugin` does not run: click + next to the prompt box, then Plugins, Add marketplace with `MHermand/SaiyanMod`, then Add plugin. A mod installed at the user scope from a terminal also loads in the desktop app's local sessions.
 
-## What it does
+### What it does
 
 - **Progress bar**: appears as soon as a subagent starts and counts the batch's steps, done out of planned: the steps each subagent reports, or one for a subagent that reports none. Once none runs, it turns green ("Done"); the next subagent starts a new batch. ✕ hides it; the next agent brings it back.
 - **Mascot and count**: beside the bar, `×N` with the head of the strongest model among this turn's agents, finished or not.
@@ -47,7 +63,7 @@ Answer `y` to add the marketplace, then pick a scope (the user scope comes first
 
 Cost is a rough estimate from token counts and the price table (`PRICES` in `hooks/register.tsx`), not a bill.
 
-## Settings
+### Settings
 
 In `/config`, or in `~/.claude/settings.json`:
 
@@ -58,7 +74,7 @@ In `/config`, or in `~/.claude/settings.json`:
 { "pluginConfigs": { "agents-progress": { "options": { "language": "fr", "formHaiku": "super" } } } }
 ```
 
-## Also in this marketplace
+## usage-limits, replaced by saiyan
 
 **[usage-limits](https://github.com/MHermand/SaiyanMod/tree/main/usage-limits#readme)**: a slim band above the prompt with your Claude plan's usage limits, the 5-hour session and the week: how much is used, when each resets, and whether your pace will reach the limit before then, with alerts at 75% and 90%. Its band stacks with this one.
 
