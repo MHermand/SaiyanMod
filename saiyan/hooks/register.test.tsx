@@ -172,8 +172,16 @@ test('the mascot: the model gives the hair, the effort the face and its motion',
   expect(face('high')).toContain('class="run respire cligne reflet auraLente"')
   expect(face('xhigh')).toContain('class="run respire reflet aura eclairs"')
   expect(face('max')).toContain('class="run tremble cheveux flammes peauRouge cheveuxFeu auraFeu traits"')
-  // Black hair has no aura of its own: a plain one from high on.
-  expect(face('high', 'base')).toContain('#9BD7FF')
+  // Black hair has no aura of its own: a grey one from high on, and grey bolts, never blue.
+  expect(face('high', 'base')).toContain('fill="#8C8C8C"')
+  expect(face('xhigh', 'base')).toContain('stroke="#8C8C8C"')
+  for (const mood of ['high', 'xhigh', 'max']) expect(face(mood, 'base')).not.toContain('#9BD7FF')
+  // All out, each form flares in its own hue: greys, yellows, blues; orange is the red form's alone.
+  const flare = { base: '#3A3A3A', charged: '#FFF07A', super: '#2F7BFF', ultimate: '#FF8A1F' } as const
+  for (const [form, color] of Object.entries(flare)) {
+    expect(face('max', form)).toContain(`fill="${color}"`)
+    if (form !== 'ultimate') for (const fire of ['#FF8A1F', '#FF5A2A', '#B3140F']) expect(face('max', form)).not.toContain(fire)
+  }
   // The mouth follows the effort for every model, the strongest too: the wide cry at max alone.
   const wide = 'M39 81 Q50 79 61 81'
   expect(face('medium', 'ultimate')).not.toContain(wide)

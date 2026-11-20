@@ -85,9 +85,10 @@ const MOODS: Record<Mood, Pick<Look, 'eyeHeight' | 'brows' | 'mouth' | 'effects'
     effects: ['tremble', 'cheveux', 'flammes', 'peauRouge', 'cheveuxFeu', 'auraFeu', 'traits'],
   },
 }
-// The skin and the aura of a mood's mascot, where its form has none of its own to give.
+// The skin and the aura of a mood's mascot, where its form has none of its own to give: grey for
+// Base's black hair, as yellow, blue and red are the other forms'.
 const CALM_SKIN = '#F6D2B0'
-const PLAIN_AURA = '#9BD7FF'
+const PLAIN_AURA = '#8C8C8C'
 
 const LOOKS: Record<Form, Look> = {
   base: {
@@ -147,8 +148,14 @@ const HAIR = 'M24 64 L12 46 L24 44 L10 22 L32 34 L26 6 L42 28 L50 0 L58 28 L74 6
 // The flame-shaped aura, its foot at the chin.
 const AURA = 'M50 -4 C58 14 64 10 68 24 C78 14 92 36 94 56 C96 72 88 86 74 90 L26 90 C12 86 4 72 6 56 C8 36 22 14 32 24 C36 10 42 14 50 -4 Z'
 const AURA_INNER = 'translate(12 22) scale(.76)'
-const FIRE_AURA = '#FF8A1F'
-const FIRE_HAIR: Palette = { light: '#FFD27A', hair: '#FF5A2A', dark: '#B3140F', edge: '#7E0D0A' }
+// What a form flares to all out, its aura and its hair turning to it and back, and the streaks it
+// gives off: in its own hue, greys for Base; red and orange are Ultimate's alone.
+const FLARE: Record<Form, { aura: string; hair: Palette; streak: string }> = {
+  base: { aura: '#3A3A3A', hair: { light: '#E4E4E4', hair: '#9E9E9E', dark: '#4C4C4C', edge: '#6E6E6E' }, streak: '#F0F0F0' },
+  charged: { aura: '#FFF07A', hair: { light: '#FFFFF2', hair: '#FFF27A', dark: '#FFC21A', edge: '#F0A500' }, streak: '#FFF5B0' },
+  super: { aura: '#2F7BFF', hair: { light: '#F0FCFF', hair: '#9CE7FF', dark: '#2A8CE8', edge: '#1574C4' }, streak: '#E6FBFF' },
+  ultimate: { aura: '#FF8A1F', hair: { light: '#FFD27A', hair: '#FF5A2A', dark: '#B3140F', edge: '#7E0D0A' }, streak: '#FFD9CF' },
+}
 
 // Shine down the three tallest locks, at mid-height of the hair.
 const shineFor = (d: string): string => {
@@ -266,17 +273,18 @@ export const mascotSvg = (form: Form, size: number, isRunning: boolean, id = 'm'
   const fx = look.effects
   const has = (e: string): boolean => isRunning && fx.includes(e)
   const { skin, hair } = look
+  const flare = FLARE[form]
   const aura = !look.aura
     ? ''
     : `<g class="au"><filter id="${id}b" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><path d="${AURA}" fill="${look.aura}" opacity=".55" filter="url(#${id}b)"/><path d="${AURA}" transform="${AURA_INNER}" fill="${shade(look.aura, 0.45)}" opacity=".55" filter="url(#${id}b)"/>${
-        has('auraFeu') ? `<g class="cf cf-aura"><path d="${AURA}" fill="${FIRE_AURA}" opacity=".55" filter="url(#${id}b)"/><path d="${AURA}" transform="${AURA_INNER}" fill="${shade(FIRE_AURA, 0.45)}" opacity=".55" filter="url(#${id}b)"/></g>` : ''
+        has('auraFeu') ? `<g class="cf cf-aura"><path d="${AURA}" fill="${flare.aura}" opacity=".55" filter="url(#${id}b)"/><path d="${AURA}" transform="${AURA_INNER}" fill="${shade(flare.aura, 0.45)}" opacity=".55" filter="url(#${id}b)"/></g>` : ''
       }</g>`
   const bolts = !has('eclairs')
     ? ''
-    : `<g class="bo"><filter id="${id}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter>${BOLTS.map(d => `<g><path d="${d}" ${st(look.aura ?? '#9BD7FF', 6)} filter="url(#${id}g)"/><path d="${d}" ${st('#fff', 2.4)}/></g>`).join('')}</g>`
-  const streaks = !has('traits') ? '' : `<g class="st" stroke="#FFD9CF" stroke-linecap="round">${STREAKS}</g>`
+    : `<g class="bo"><filter id="${id}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter>${BOLTS.map(d => `<g><path d="${d}" ${st(look.aura ?? PLAIN_AURA, 6)} filter="url(#${id}g)"/><path d="${d}" ${st('#fff', 2.4)}/></g>`).join('')}</g>`
+  const streaks = !has('traits') ? '' : `<g class="st" stroke="${flare.streak}" stroke-linecap="round">${STREAKS}</g>`
   const flush = !has('peauRouge') ? '' : `<g class="cf cf-skin" fill="#FF2A1F"><ellipse cx="23" cy="72" rx="4.5" ry="7"/><ellipse cx="77" cy="72" rx="4.5" ry="7"/><path d="${HEAD}"/></g>`
-  const fireHair = !has('cheveuxFeu') ? '' : `<path class="cf cf-hair" d="${HAIR}" fill="url(#${id}f)" stroke="${FIRE_HAIR.edge}" stroke-width="1.6" stroke-linejoin="round"/>`
+  const fireHair = !has('cheveuxFeu') ? '' : `<path class="cf cf-hair" d="${HAIR}" fill="url(#${id}f)" stroke="${flare.hair.edge}" stroke-width="1.6" stroke-linejoin="round"/>`
   const shine = !look.hasShine ? '' : `<g class="sh"><path d="${SHINE}" clip-path="url(#${id}k)" ${st('#fff', 2.4)} opacity="${hair.hair === INK ? 0.3 : 0.6}"/></g>`
   const zs = !has('dort') ? '' : `<g class="zz" fill="#8FA3B8" font-family="-apple-system,'Segoe UI',sans-serif" font-weight="800"><text x="76" y="24" font-size="20">z</text><text x="91" y="6" font-size="14">z</text></g>`
   const shut = `<path d="M34 ${Y - 1} Q40 ${Y + 4} 46 ${Y - 1} M54 ${Y - 1} Q60 ${Y + 4} 66 ${Y - 1}" ${st(INK, 2.8)}/>`
@@ -291,7 +299,7 @@ export const mascotSvg = (form: Form, size: number, isRunning: boolean, id = 'm'
   const classes = isRunning ? `run ${fx.join(' ')}` : 'done'
   return `<svg xmlns="http://www.w3.org/2000/svg" class="${classes}" width="${size}" height="${size}" viewBox="-8 -12 116 116">${CSS}<defs>
 <radialGradient id="${id}s" cx="40%" cy="34%" r="72%"><stop offset="0" stop-color="${shade(skin, 0.35)}"/><stop offset=".7" stop-color="${skin}"/><stop offset="1" stop-color="${shade(skin, -0.18)}"/></radialGradient>
-${gradient(`${id}h`, hair)}${fireHair ? gradient(`${id}f`, FIRE_HAIR) : ''}
+${gradient(`${id}h`, hair)}${fireHair ? gradient(`${id}f`, flare.hair) : ''}
 <clipPath id="${id}c"><path d="${HEAD}"/></clipPath><clipPath id="${id}k"><path d="${HAIR}"/></clipPath>
 <radialGradient id="${id}i" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="${shade(look.iris, 0.4)}"/><stop offset="1" stop-color="${shade(look.iris, -0.2)}"/></radialGradient></defs>
 ${aura}${streaks}${bolts}<g class="bd"><g class="br"><g class="sk">
