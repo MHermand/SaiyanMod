@@ -12,7 +12,7 @@
       "name": "saiyan",
       "source": "./saiyan",
       "description": "Mod: one bar above the prompt with two views, your plan's usage limits and the subagents' progress, and a spiky-haired mascot wearing your model and effort; a click on it picks them for your next message.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "mod"
     }
   ]
