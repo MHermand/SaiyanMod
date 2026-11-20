@@ -260,11 +260,16 @@ const fitText = (s: string, size: number, maxW: number): string => {
   return out + '…'
 }
 
+/** Whether the folded agents row at width `W` keeps its title: narrow, it keeps the bar alone. */
+export const rowHasTitle = (W: number): boolean => W >= 250
+
 export const rowSvg = (f: Flow, W: number): string => {
-  // The title takes what it needs, up to 40% of the row; the bar takes the rest.
-  const title = fitText(f.title, 13, Math.max(60, W * 0.4))
-  const BAR_X = Math.round(16 + textWidth(title, 13) + 12)
-  const BAR_W = Math.max(60, W - BAR_X - 46)
+  // The title takes what it needs, up to 40% of the row; the bar takes the rest. Narrow, the bar
+  // takes the row and its pill keeps the count alone when its words would not fit.
+  const hasTitle = rowHasTitle(W)
+  const title = hasTitle ? fitText(f.title, 13, Math.max(60, W * 0.4)) : ''
+  const BAR_X = hasTitle ? Math.round(16 + textWidth(title, 13) + 12) : 16
+  const BAR_W = Math.max(40, W - BAR_X - 46)
   const color = f.isFinished ? DONE : ACCENT
   const y0 = (H - BAR_H) / 2
   const fillW = Math.round(BAR_W * ratio(f))
@@ -291,7 +296,8 @@ export const rowSvg = (f: Flow, W: number): string => {
     if (x > fillW + 4) ticks.push(`<rect x="${bx(x, 1.5)}" y="${BAR_H / 2 - 4}" width="1.5" height="8" rx="0.75"/>`)
   }
 
-  const text = label(f)
+  const words = label(f)
+  const text = f.total && !f.isFinished && 18 + words.length * 6.6 > BAR_W * 0.7 ? `${f.done}/${f.total}` : words
   const pillW = Math.round(18 + text.length * 6.6)
   const pillX = bx(Math.max(0, Math.min(BAR_W - pillW, fillW - pillW)), pillW)
   const percent = `${Math.round(ratio(f) * 100)}%`
@@ -311,7 +317,7 @@ export const rowSvg = (f: Flow, W: number): string => {
 </style>
 <defs><clipPath id="c"><rect x="0" y="0" width="${BAR_W}" height="${BAR_H}" rx="${BAR_H / 2}"/></clipPath></defs>
 <circle cx="${rtl ? W - 5 : 5}" cy="${H / 2}" r="4" fill="${color}"/>
-<text class="t" ${titleAt} y="${H / 2 + 4.5}" font-family="${FONT}" font-size="13" font-weight="500">${xml(title)}</text>
+${hasTitle ? `<text class="t" ${titleAt} y="${H / 2 + 4.5}" font-family="${FONT}" font-size="13" font-weight="500">${xml(title)}</text>` : ''}
 <g transform="translate(${rx(BAR_X, BAR_W)},${y0})">
 <rect class="k" width="${BAR_W}" height="${BAR_H}" rx="${BAR_H / 2}"/>
 <g clip-path="url(#c)">
@@ -482,7 +488,9 @@ export const agentSvg = (W: number, a: AgentRun, at: number): string => {
   const progress = progressOf(a)
   const X = 0
   const textW = W
-  const right = `≈${fmtCost(a.costUsd)} · ${fmtTokens(a.tokens)} ${s.tokensWord} · ${fmtSpan(elapsed(a, at))}`
+  // Narrow, the tokens give way so the model and the steps keep some room.
+  const full = `≈${fmtCost(a.costUsd)} · ${fmtTokens(a.tokens)} ${s.tokensWord} · ${fmtSpan(elapsed(a, at))}`
+  const right = textWidth(full, 11) > W * 0.55 ? `≈${fmtCost(a.costUsd)} · ${fmtSpan(elapsed(a, at))}` : full
   const meta = [runModel(a)]
   if (a.stepTotal) meta.push(`${a.stepDone ?? 0}/${a.stepTotal}${a.stepNote ? ' ' + a.stepNote : ''}`)
   if (a.round > 1) meta.push(`${s.round} ${a.round}`)

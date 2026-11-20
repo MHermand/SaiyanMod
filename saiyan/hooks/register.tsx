@@ -26,6 +26,7 @@ import {
   norm,
   progressOf,
   ratio,
+  rowHasTitle,
   rowSvg as agentsRowSvg,
   runModel,
   setAgentsLang,
@@ -50,6 +51,7 @@ import {
   nameOf,
   pct,
   rowNote,
+  rowShown,
   rowSvg as usageRowSvg,
   summary,
   windowBlock,
@@ -792,6 +794,13 @@ export const register: Register = (on, options) => {
     const list = await read($, agents)
     const isWorking = list.some(a => a.status === 'running')
     const cols = e.props.bodyColumns || 100
+    // What the row between the mascot and the controls is drawn at: a little wider than the room
+    // is likely to be, the surface scaling it down; narrow, as narrow as the room, so the drawings
+    // give way (`rowShown`) before they shrink past reading.
+    const rowWidth = Math.max(120, Math.min(1600, cols * 9 - 104))
+    const fullWidth = Math.max(160, Math.min(1600, cols * 9 - 16))
+    // The agents row also leaves room for the strongest head and its count.
+    const agentsRowWidth = Math.max(100, Math.min(1600, cols * 9 - 150))
 
     // At the left, the mascot wears the session's model; at the right, ⇄ moves to the other view,
     // before the fold toggle, and ✕ puts the bar away (the terminal keeps the view's name and its
@@ -853,27 +862,32 @@ export const register: Register = (on, options) => {
       d &&
       (() => {
         const { Svg } = ui as typeof ui & { Svg: NonNullable<(typeof ui)['Svg']> }
-        const q = drawQuick(d, families, isDraftOff, quickWindows, quickAt, Math.max(260, Math.min(1600, cols * 9 - 104)), l3)
-        // Sized by the drawing, so the cells' shares are of its width as drawn.
+        const q = drawQuick(d, families, isDraftOff, quickWindows, quickAt, rowWidth, l3)
+        // Each line sized by its drawing, so the cells' shares are of its width as drawn; narrow,
+        // the models take a line and the effort the next.
         return (
-          <Box key="quick" position="relative" alignSelf="flex-start" marginTop={1}>
-            <Svg source={q.source} alt={q.alt} />
-            <Box position="absolute" top={0} bottom={0} left={0} right={0} flexDirection="row">
-              {q.cells.map(cell => {
-                const { family: f, effort: e, inner } = cell
-                if (!inner) return <Box key={cell.key} width={`${cell.width}%`} />
-                // The stretch cut again: room, then the button fitted to its word or dot.
-                return (
-                  <Box key={cell.key} width={`${cell.width}%`} flexDirection="row">
-                    <Box width={`${inner.left}%`} />
-                    <Box key={`${cell.key}-hit`} width={`${inner.width}%`} position="relative">
-                      {f && laid(<Button key={`quick-model-${f}`} label={'\u2800\u2800'} plain onPress={() => void pickDraft($, { family: f })} />)}
-                      {e && laid(<Button key={`quick-effort-${e}`} label={'\u2800\u2800'} plain onPress={() => void pickDraft($, { effort: e })} />)}
-                    </Box>
-                  </Box>
-                )
-              })}
-            </Box>
+          <Box key="quick" flexDirection="column" alignSelf="flex-start" marginTop={1}>
+            {q.lines.map((line, i) => (
+              <Box key={`quick-${i}`} position="relative">
+                <Svg source={line.source} alt={i === 0 ? q.alt : ' '} />
+                <Box position="absolute" top={0} bottom={0} left={0} right={0} flexDirection="row">
+                  {line.cells.map(cell => {
+                    const { family: f, effort: e, inner } = cell
+                    if (!inner) return <Box key={cell.key} width={`${cell.width}%`} />
+                    // The stretch cut again: room, then the button fitted to its word or dot.
+                    return (
+                      <Box key={cell.key} width={`${cell.width}%`} flexDirection="row">
+                        <Box width={`${inner.left}%`} />
+                        <Box key={`${cell.key}-hit`} width={`${inner.width}%`} position="relative">
+                          {f && laid(<Button key={`quick-model-${f}`} label={'\u2800\u2800'} plain onPress={() => void pickDraft($, { family: f })} />)}
+                          {e && laid(<Button key={`quick-effort-${e}`} label={'\u2800\u2800'} plain onPress={() => void pickDraft($, { effort: e })} />)}
+                        </Box>
+                      </Box>
+                    )
+                  })}
+                </Box>
+              </Box>
+            ))}
           </Box>
         )
       })()
@@ -949,7 +963,7 @@ export const register: Register = (on, options) => {
           {rows}
           {room > 0 && (
             <Box key="room">
-              <Svg source={blankSvg(Math.max(240, Math.min(1600, cols * 9 - 16)), room)} alt=" " height={room} />
+              <Svg source={blankSvg(fullWidth, room)} alt=" " height={room} />
             </Box>
           )}
           <Box key="footer" flexDirection={rowDir} alignItems="center" justifyContent="space-between" gap={1} marginTop={2}>
@@ -1005,8 +1019,11 @@ export const register: Register = (on, options) => {
       }
       const alt = heads.map(w => `${nameOf(w.kind, l3).long} ${pct(w.used, l3)}, ${rowNote(w, at, l3).text}`).join(' · ')
       const gaugeNow = await read($, gauge)
+      // Where the folded row keeps the 5-hour session alone, the window is narrow: the unfolded
+      // head drops how old the figures are, and the footer the messages.
+      const isNarrow = !isTerminal && !rowShown(heads, rowWidth, at, l3).hasTitle
       // Unfolded, the footer's figures, as the agents view's: the names dim, the figures bold.
-      const figureBoxes = sessionFigures(gaugeNow, at, l3).map(([name, value]) => (
+      const figureBoxes = sessionFigures(gaugeNow, at, l3, !isNarrow).map(([name, value]) => (
         <Box key={name} flexDirection={rowDir} gap={1}>
           <Text dimColor>{name}</Text>
           <Text bold>{value}</Text>
@@ -1014,10 +1031,8 @@ export const register: Register = (on, options) => {
       ))
       if (!isTerminal) {
         const { Svg } = ui as typeof ui & { Svg: NonNullable<(typeof ui)['Svg']> }
-        // Drawn a little wider than the slot is likely to be, without a width: the
-        // surface scales it down to the room the mascot and the controls leave.
-        const rowW = Math.max(260, Math.min(1600, cols * 9 - 104))
-        const W = Math.max(260, Math.min(1600, cols * 9 - 16))
+        const rowW = rowWidth
+        const W = fullWidth
         // Unfolded, one block per row as the agents view draws its agents: the context, the
         // 5-hour window and the week, whatever else the account reports.
         const blocks = [contextBlock(gaugeNow, l3), ...mainWindows(ws).map(w => windowBlock(w, at, l3))]
@@ -1028,7 +1043,7 @@ export const register: Register = (on, options) => {
               {quickMid(
                 <Box flexGrow={1} flexShrink={1}>
                   {unfolded ? (
-                    <Svg source={headSvg(rowW, r.at, at, l3)} alt={`${s.title}: ${alt}`} />
+                    <Svg source={headSvg(rowW, r.at, at, l3, !isNarrow)} alt={`${s.title}: ${alt}`} />
                   ) : (
                     <Svg source={usageRowSvg(heads, rowW, at, l3)} alt={`${s.title}: ${alt}`} />
                   )}
@@ -1147,10 +1162,12 @@ export const register: Register = (on, options) => {
     // Newest first: the bar under each says whether it still runs.
     const shownAgents = [...list].reverse()
     const t = totals(list, at)
+    // Where the folded row keeps its bar alone, the window is narrow: the footer drops the tokens.
+    const isNarrow = !isTerminal && !rowHasTitle(agentsRowWidth)
     // The totals line: each figure under its name, the names dim and the figures bold.
     const figures: [string, string][] = [
       [s.cost, `≈${fmtCost(t.cost)}`],
-      [s.tokens, fmtTokens(t.tokens)],
+      ...(isNarrow ? [] : [[s.tokens, fmtTokens(t.tokens)] as [string, string]]),
       [s.time, fmtSpan(t.time)],
     ]
     const offset = Math.max(0, Math.min(shownAgents.length - LIST_ROWS, p.listOffset ?? 0))
@@ -1186,8 +1203,8 @@ export const register: Register = (on, options) => {
 
     if (!isTerminal) {
       const { Svg } = ui as typeof ui & { Svg: NonNullable<(typeof ui)['Svg']> }
-      const width = Math.max(180, Math.min(1600, cols * 9 - 112))
-      const W = Math.max(240, Math.min(1600, cols * 9 - 16))
+      const width = agentsRowWidth
+      const W = fullWidth
       // The bar wears the head of the strongest model among this turn's agents (those running when
       // the person sent the prompt, and those started since), done or not; the later one on a tie.
       const rank = (a: AgentRun): number => FORMS.indexOf(formOf(a.model))

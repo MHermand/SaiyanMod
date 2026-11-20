@@ -1,9 +1,9 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { headSvg, rowBars, rowGroups, rowSvg, windowOf } from './limits'
+import { headSvg, rowBars, rowGroups, rowShown, rowSvg, textWidth, windowOf } from './limits'
 import { mascotSvg } from './mascot'
-import { quickLine } from './model'
+import { quickLine, sessionFigures } from './model'
 import { EFFORTS, isBarKey, moveOf } from './switch'
 
 const NOW = Date.parse('2026-11-01T00:39:00Z')
@@ -136,7 +136,10 @@ test('the quick line: the models along the 5-hour window from its bar, the dots 
   const W = 796
   const ws = CALM.map(l => windowOf(l, NOW))
   const [fiveHour, week] = rowBars(ws, W, NOW, 'fr')
-  const q = quickLine({ family: 'opus', effort: 'high' }, ['haiku', 'sonnet', 'opus', 'fable'], false, ws, NOW, W, 'fr')
+  const lines = quickLine({ family: 'opus', effort: 'high' }, ['haiku', 'sonnet', 'opus', 'fable'], false, ws, NOW, W, 'fr').lines
+  // Wide: one line.
+  expect(lines).toHaveLength(1)
+  const q = lines[0]!
   expect(q.source).toContain(`x="${fiveHour?.barX}"`)
   expect(q.source).toMatch(new RegExp(`x="${fiveHour?.barX}"[^>]*>Haiku<`))
   const dots = [...q.source.matchAll(/<circle cx="([\d.]+)"/g)].map(m => Number(m[1]))
@@ -157,6 +160,81 @@ test('the quick line: the models along the 5-hour window from its bar, the dots 
   EFFORTS.forEach((e, i) => expect(Math.abs((centre[e] ?? 0) - (dots[i] ?? 0)) < 1).toBe(true))
   // The model chosen has no button.
   expect(q.cells.some(c => c.family === 'opus')).toBe(false)
+})
+
+test('narrow, the folded row keeps the 5-hour session alone, the choice takes two lines, and nothing runs past its drawing', () => {
+  const ws = CALM.map(l => windowOf(l, NOW))
+  const families = ['haiku', 'sonnet', 'opus', 'fable'] as const
+  // Every text inside its drawing: a start one from x on, an end one up to x.
+  const inside = (source: string, W: number) =>
+    [...source.matchAll(/<text[^>]* x="([\d.-]+)"[^>]*font-size="([\d.]+)"([^>]*)>([^<]*)</g)].every(([, x, size, rest, words]) => {
+      const w = textWidth(words ?? '', Number(size), /font-weight="(600|700)"/.test(rest ?? ''))
+      const at = Number(x)
+      return /text-anchor="end"/.test(rest ?? '') ? at - w >= -0.5 && at <= W + 0.5 : at >= -0.5 && at + w <= W + 0.5
+    })
+  for (const W of [120, 160, 200, 240, 280, 320, 360, 420, 500, 640, 796, 1200]) {
+    const { ws: shown, hasTitle } = rowShown(ws, W, NOW, 'fr')
+    const row = rowSvg(ws, W, NOW, 'fr')
+    if (W >= 200) expect(inside(row, W)).toBe(true)
+    // Each bar shown stops before the next group.
+    const bars = rowBars(shown, W, NOW, 'fr', hasTitle)
+    if (W >= 160) bars.forEach(b => expect(b.barX + b.barW).toBeLessThanOrEqual(b.end))
+    const lines = quickLine({ family: 'opus', effort: 'xhigh' }, families, false, ws, NOW, W, 'fr').lines
+    // Two lines wherever the row keeps the session alone, or the models outgrow its group; one when wide.
+    if (!hasTitle) expect(lines).toHaveLength(2)
+    if (W >= 640) expect(lines).toHaveLength(1)
+    if (W >= 200) lines.forEach(line => expect(inside(line.source, W)).toBe(true))
+    // The dots stay in the drawing, apart.
+    for (const line of lines) {
+      const dots = [...line.source.matchAll(/<circle cx="([\d.]+)"/g)].map(m => Number(m[1]))
+      dots.forEach((x, i) => {
+        expect(x - 5).toBeGreaterThanOrEqual(0)
+        expect(x + 5).toBeLessThanOrEqual(W)
+        if (i > 0) expect(x - (dots[i - 1] ?? 0)).toBeGreaterThanOrEqual(12)
+      })
+    }
+  }
+  // Wide, the title and both windows; narrow, the 5-hour session alone, without the title.
+  expect(rowShown(ws, 796, NOW, 'fr')).toEqual({ ws, hasTitle: true })
+  expect(rowShown(ws, 300, NOW, 'fr')).toEqual({ ws: ws.slice(0, 1), hasTitle: false })
+  expect(rowSvg(ws, 300, NOW, 'fr')).not.toMatch(/Limites|Hebdomadaire/)
+  expect(rowSvg(ws, 300, NOW, 'fr')).toContain('33')
+  // The unfolded head drops how old the figures are; the footer, the messages.
+  expect(headSvg(800, NOW, NOW, 'fr')).toContain('mis à jour')
+  expect(headSvg(800, NOW, NOW, 'fr', false)).not.toContain('mis à jour')
+  expect(headSvg(150, NOW, NOW, 'fr')).not.toContain('mis à jour')
+  const g = { costUsd: 3.2, turns: 3, startedAt: NOW - 60_000 }
+  expect(sessionFigures(g, NOW, 'fr').map(([n]) => n)).toEqual(['Coût', 'Messages', 'Durée'])
+  expect(sessionFigures(g, NOW, 'fr', false).map(([n]) => n)).toEqual(['Coût', 'Durée'])
+})
+
+test('in a narrow window the bar keeps the 5-hour session alone, and its footers give way', FR, async ($, on) => {
+  engine(on)
+  await start($)
+  await $.session.measure(measure(CALM))
+  await command($, 'saiyan')
+  const at = (cols: number) => $.ui.mount({ ...BAND, props: { ...BAND.props, bodyColumns: cols }, surface: 'desktop' } as never)
+  const sources = async (ui: any) => (await ui.findAll({ type: 'Svg' })).map((s: any) => String(s.props.source)).join('\n')
+  const wide = await at(100)
+  const narrow = await at(36)
+  expect(await sources(wide)).toContain('Hebdomadaire')
+  expect(await sources(narrow)).not.toContain('Hebdomadaire')
+  // Unfolded: the head without its age, the footer without the messages.
+  await narrow.press({ key: 'limits-toggle' })
+  expect(await sources(narrow)).not.toContain('mis à jour')
+  expect(await texts(narrow)).not.toContain('Messages')
+  expect(await sources(wide)).toContain('mis à jour')
+  expect(await texts(wide)).toContain('Messages')
+  // The choice opens on two lines.
+  await narrow.press({ key: 'saiyan-pick' })
+  expect((await narrow.findAll({ type: 'Svg' })).filter((s: any) => /Opus|Haiku/.test(String(s.props.source)))).toHaveLength(1)
+  expect(await narrow.find({ key: 'quick-effort-max' })).toBeTruthy()
+  // The agents view's footer drops the tokens.
+  await $.agent.spawn(spawn('a1') as never)
+  expect(await texts(narrow)).not.toContain('Tokens')
+  expect(await texts(wide)).toContain('Tokens')
+  await narrow.unmount()
+  await wide.unmount()
 })
 
 test('the mascot: the model gives the hair, the effort the face and its motion', FR, async ($, on) => {
@@ -473,9 +551,9 @@ test('a press on the mascot opens the choice of model and effort; the next messa
   const ui = await mount($)
   const isOpen = async () => (await ui.find({ key: 'quick' })) !== undefined
   const send = (extra = {}) => $.prompt.submit({ text: 'next', origin: { kind: 'composer' }, ...extra } as never)
-  // The line is one drawing, made as the folded limits row is: at its width, so its words stand
-  // as large; blank buttons over its cells take the presses.
-  const line = async () => (await ui.find({ key: 'quick' })) as any
+  // The line is one drawing (two in a narrow window), made as the folded limits row is: at its
+  // width, so its words stand as large; blank buttons over its cells take the presses.
+  const line = async () => (await ui.find({ key: 'quick-0' })) as any
   const drawing = async () => String((await line()).children[0].props.source)
   const filled = async () => ((await drawing()).match(/<circle[^>]*fill="#[0-9A-F]+"/g) ?? []).length
   // A blank button laid over the head: no text, about its width.
@@ -494,7 +572,7 @@ test('a press on the mascot opens the choice of model and effort; the next messa
   const row = (await ui.findAll({ type: 'Svg' })).find((el: any) => String(el.props.alt).startsWith('Limites:'))
   const size = (source: string) => source.match(/width="(\d+)" height="(\d+)"/)?.slice(1)
   expect(size(await drawing())).toEqual(size(String(row?.props.source)))
-  expect((await line()).props.alignSelf).toBe('flex-start')
+  expect(((await ui.find({ key: 'quick' })) as any).props.alignSelf).toBe('flex-start')
   expect(await drawing()).toMatch(/class="t"[^>]*font-size="13"[^>]*font-weight="600">Modèle</)
   expect(await drawing()).toMatch(/class="t"[^>]*font-weight="600">Effort</)
   // The model chosen in its color; the others to press, each over its own cell, the chosen one bare.

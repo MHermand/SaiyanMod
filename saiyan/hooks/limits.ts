@@ -381,22 +381,25 @@ export type Group = { start: number; labelX: number; end: number }
  * place in the first) and where its window's label starts, to the end of its note. The quick
  * choice under the row lines up with them.
  */
-export const rowGroups = (n: number, W: number, lang: Lang): Group[] => {
+export const rowGroups = (n: number, W: number, lang: Lang, hasTitle = true): Group[] => {
   const count = Math.max(1, n)
   const gw = (W - SEP * (count - 1)) / count
-  const titleW = textWidth(words(lang).title, 13, true) + 14
+  const titleW = hasTitle ? textWidth(words(lang).title, 13, true) + 14 : 0
   return Array.from({ length: count }, (_, i) => {
     const start = i * (gw + SEP)
     return { start, labelX: i === 0 ? start + titleW : start, end: start + gw }
   })
 }
 
-/** A window's place in the folded row: its group, its label, its bar, and its note's width (0 when it gives way). */
-export type RowBar = Group & { label: string; labelW: number; barX: number; barW: number; noteW: number }
+/**
+ * A window's place in the folded row: its group, its label, its bar, and its note's width (0 when
+ * it gives way). `fits` is false when even the bar alone has no room for its 48px.
+ */
+export type RowBar = Group & { label: string; labelW: number; barX: number; barW: number; noteW: number; fits: boolean }
 
 /** Where the folded row draws each headline window; the quick choice under the row lines up with it. */
-export const rowBars = (ws: readonly Window[], W: number, now: number, lang: Lang): RowBar[] => {
-  const groups = rowGroups(ws.length, W, lang)
+export const rowBars = (ws: readonly Window[], W: number, now: number, lang: Lang, hasTitle = true): RowBar[] => {
+  const groups = rowGroups(ws.length, W, lang, hasTitle)
   const pctW = textWidth(pct(100, lang), 13, true)
   return ws.flatMap((w, i) => {
     const g = groups[i]
@@ -409,16 +412,24 @@ export const rowBars = (ws: readonly Window[], W: number, now: number, lang: Lan
     const room = g.end - g.labelX - labelW - 16 - pctW
     if (room - noteW - 8 < 48) noteW = 0
     const barW = Math.max(28, room - (noteW ? noteW + 8 : 0))
-    return [{ ...g, label, labelW, barX: g.labelX + labelW + 8, barW, noteW }]
+    return [{ ...g, label, labelW, barX: g.labelX + labelW + 8, barW, noteW, fits: room >= 48 }]
   })
 }
 
+/**
+ * What the folded row has room for at width `W`: the title and every headline window while each
+ * keeps a bar, else the 5-hour session alone, without the title, as a narrow window shows it.
+ */
+export const rowShown = (ws: readonly Window[], W: number, now: number, lang: Lang): { ws: readonly Window[]; hasTitle: boolean } =>
+  rowBars(ws, W, now, lang).every(b => b.fits) ? { ws, hasTitle: true } : { ws: ws.slice(0, 1), hasTitle: false }
+
 /** The folded row: the title, then each headline window's label, bar, percent and note, in groups as wide. */
-export const rowSvg = (ws: readonly Window[], W: number, now: number, lang: Lang): string => {
+export const rowSvg = (all: readonly Window[], W: number, now: number, lang: Lang): string => {
   const mid = ROW_H / 2
-  let body = text(0, mid + 4.5, 't', 13, words(lang).title, ' font-weight="600"')
+  const { ws, hasTitle } = rowShown(all, W, now, lang)
+  let body = hasTitle ? text(0, mid + 4.5, 't', 13, words(lang).title, ' font-weight="600"') : ''
   const pctW = textWidth(pct(100, lang), 13, true)
-  rowBars(ws, W, now, lang).forEach((b, i) => {
+  rowBars(ws, W, now, lang, hasTitle).forEach((b, i) => {
     const w = ws[i]
     if (!w) return
     if (i > 0) body += `<rect class="sp" x="${(b.start - SEP / 2 - 0.5).toFixed(1)}" y="${mid - 9}" width="1" height="18"/>`
@@ -432,12 +443,13 @@ export const rowSvg = (ws: readonly Window[], W: number, now: number, lang: Lang
   return svg(W, ROW_H, body)
 }
 
-/** The unfolded head: the title, and how old the figures are. */
-export const headSvg = (W: number, readAt: number, now: number, lang: Lang): string => {
+/** The unfolded head: the title, and how old the figures are, unless the window is narrow. */
+export const headSvg = (W: number, readAt: number, now: number, lang: Lang, hasAge = true): string => {
   const s = words(lang)
   const mid = ROW_H / 2
   const age = s.updated(ago(readAt, now, lang))
-  return svg(W, ROW_H, `${text(0, mid + 4.5, 't', 13, s.title, ' font-weight="600"')}${text(W, mid + 4, 'm', 12, age, ' text-anchor="end"')}`)
+  const isRoomy = hasAge && textWidth(s.title, 13, true) + 24 + textWidth(age, 12) <= W
+  return svg(W, ROW_H, `${text(0, mid + 4.5, 't', 13, s.title, ' font-weight="600"')}${isRoomy ? text(W, mid + 4, 'm', 12, age, ' text-anchor="end"') : ''}`)
 }
 
 // The unfolded view's blocks, laid out as the agents view lays out an agent: an icon at the left,
