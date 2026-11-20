@@ -1,5 +1,7 @@
 # usage-limits
 
+> No longer in the marketplace: [saiyan](https://github.com/MHermand/SaiyanMod/tree/main/saiyan#readme) replaces it. If you installed it, turn it off with `claude plugin disable usage-limits@saiyan-mod`.
+
 A Claude Code mod: a slim band above the prompt with your Claude plan's usage limits, the 5-hour session and the week. It shows how much of each is used, how long until it resets, and whether your pace will reach the limit before then, with a toast when it gets tight.
 
 ## Screenshots
