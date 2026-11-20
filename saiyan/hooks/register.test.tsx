@@ -419,7 +419,8 @@ test('the /model and /effort the mod runs print nothing; typed, they print', FR,
   const run = (command: string, origin: object) => $.command.run({ command, args: 'high', origin, presentation: { isFullscreen: false, columns: 100 } } as never)
   for (const what of ['model', 'effort']) {
     expect((await run(what, { kind: 'composer' })).text).toBe('ok')
-    expect((await run(what, { kind: 'plugin', name: 'saiyan' })).text).toBe('')
+    // No text at all: an empty one still drew a row, `saiyan: `.
+    expect((await run(what, { kind: 'plugin', name: 'saiyan' })).text).toBe(undefined)
     expect((await run(what, { kind: 'plugin', name: 'another' })).text).toBe('ok')
   }
 })

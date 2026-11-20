@@ -554,11 +554,14 @@ export const register: Register = (on, options) => {
 
   // The /model and /effort the quick choice and the shortcuts run print nothing: the change went
   // with the message already, and a line after the answer read as if it came late. Typed, they print.
+  // The text goes, not just its words: an empty text still drew a row under the mod's name, `saiyan: `.
   for (const what of ['model', 'effort'] as const) {
     on('command.run', { command: what }, async ($, e, next) => {
       const done = await next(e)
       const by = e.origin as { kind?: string; name?: string } | undefined
-      return by?.kind === 'plugin' && by.name === 'saiyan' ? { ...done, text: '' } : done
+      if (by?.kind !== 'plugin' || by.name !== 'saiyan') return done
+      const { text: _printed, ...quiet } = done
+      return quiet
     })
   }
 
