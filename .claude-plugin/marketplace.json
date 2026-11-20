@@ -5,28 +5,14 @@
     "url": "https://github.com/MHermand"
   },
   "metadata": {
-    "description": "Claude Code mods by MHermand: saiyan, one bar above the prompt with your plan's usage limits and the subagents' progress, and a mascot that wears your model and effort; agents-progress and usage-limits, the two mods it replaces."
+    "description": "Claude Code mods by MHermand: saiyan, one bar above the prompt with your plan's usage limits and the subagents' progress, and a mascot that wears your model and effort."
   },
   "plugins": [
     {
       "name": "saiyan",
       "source": "./saiyan",
-      "description": "Mod: one bar above the prompt with two views, your plan's usage limits and the subagents' progress, and a spiky-haired mascot wearing your model and effort; a click on it picks them for your next message. Replaces agents-progress and usage-limits.",
+      "description": "Mod: one bar above the prompt with two views, your plan's usage limits and the subagents' progress, and a spiky-haired mascot wearing your model and effort; a click on it picks them for your next message.",
       "version": "1.0.0",
-      "category": "mod"
-    },
-    {
-      "name": "agents-progress",
-      "source": "./",
-      "description": "Mod, replaced by saiyan: progress bar above the prompt whenever subagents run, a mascot per model, and the list of subagents with steps, cost, tokens and time.",
-      "version": "0.7.0",
-      "category": "mod"
-    },
-    {
-      "name": "usage-limits",
-      "source": "./usage-limits",
-      "description": "Mod, replaced by saiyan: a slim band above the prompt with your plan usage limits, the 5-hour session and the week: how much is used, when each resets, and whether your pace reaches the limit before then; alerts at 75% and 90%.",
-      "version": "0.1.0",
       "category": "mod"
     }
   ]

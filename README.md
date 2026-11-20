@@ -1,6 +1,6 @@
 # SaiyanMod
 
-Claude Code mods. The one to install is **saiyan**; agents-progress and usage-limits, below, are the two mods it replaces.
+Claude Code mods by MHermand.
 
 ## saiyan
 
@@ -12,77 +12,9 @@ One bar above the prompt with two views, your Claude plan's usage limits and the
 /plugin install saiyan --marketplace MHermand/SaiyanMod
 ```
 
-Its screenshots, what it does and its settings: [saiyan/README.md](https://github.com/MHermand/SaiyanMod/tree/main/saiyan#readme). With agents-progress or usage-limits installed, turn them off, or their bands stack with it.
+Its screenshots, what it does and its settings: [saiyan/README.md](https://github.com/MHermand/SaiyanMod/tree/main/saiyan#readme).
 
-## agents-progress, replaced by saiyan
-
-A Claude Code mod (`agents-progress`): a progress bar above the prompt whenever subagents run, the list of subagents folded out under it, and a spiky-haired mascot per model that powers up from Haiku to Fable. Adapted from [savvy-progress](https://github.com/JohnnyVizz/claude-kit/tree/main/plugins/savvy-progress) by johnnyvizz (MIT), with the savvy-flow coupling removed.
-
-![Four subagents started one after the other, from Haiku to Fable: the bar's head powers up as each one joins](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/demo.gif)
-
-Four subagents started one after the other, Haiku, Sonnet, Opus, then Fable: the head beside `×N` powers up as each stronger model joins. [Full-quality MP4](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/demo.mp4).
-
-### Screenshots
-
-| | While the agents run | Once they are done |
-| --- | --- | --- |
-| **Collapsed** | ![Collapsed bar while the agents run](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/screenshots/01-collapsed-running.png) | ![Collapsed bar once the agents are done](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/screenshots/04-collapsed-done.png) |
-| **Unfolded** | ![Agents list while the agents run](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/screenshots/02-list-running.png) | ![Agents list once the agents are done](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/docs/screenshots/03-list-done.png) |
-
-The bar wears the head of the strongest model of the turn (here Fable). Each head is animated while its agent works, then stands still with its aura dimmed.
-
-### Install
-
-At the prompt of a Claude Code terminal session:
-
-```
-/plugin install agents-progress --marketplace MHermand/SaiyanMod
-```
-
-From a shell:
-
-```
-claude plugin install agents-progress --marketplace MHermand/SaiyanMod
-```
-
-Answer `y` to add the marketplace, then pick a scope (the user scope comes first). In the desktop app, where `/plugin` does not run: click + next to the prompt box, then Plugins, Add marketplace with `MHermand/SaiyanMod`, then Add plugin. A mod installed at the user scope from a terminal also loads in the desktop app's local sessions.
-
-### What it does
-
-- **Progress bar**: appears as soon as a subagent starts and counts the batch's steps, done out of planned: the steps each subagent reports, or one for a subagent that reports none. Once none runs, it turns green ("Done"); the next subagent starts a new batch. ✕ hides it; the next agent brings it back.
-- **Mascot and count**: beside the bar, `×N` with the head of the strongest model among this turn's agents, finished or not.
-- **Agents list**: the ▶ arrow beside ✕ (or `/agents-info`) folds it out under the bar: one compact row per subagent, newest first and three at a time, with its mascot, model, effort and steps, then cost, tokens and time; the bar under each row says whether it still runs. Under the rows, the turn's estimated cost, tokens and time, with ▲ ▼ to reach older agents and a flag that switches the mod's language. The list starts folded. Each prompt you send folds it and, once the next agent starts, keeps only the agents that were running when you sent it, plus the new ones.
-- **Step reporting**: every subagent's brief gets one line asking it to report its steps with `mcp__agents-progress__step`, which draws its own bar in the list. A subagent that does not report shows its context fill in grey.
-- **Mascot**: a spiky-haired head per model, animated while the agent runs and still, its aura dimmed, once done:
-  - Haiku, Normal: black hair; breathing, blinking.
-  - Sonnet, Charged: golden hair; slow golden aura, breathing, blinking, shine.
-  - Opus, Super: blue hair; blue aura, bolts, shake, shine.
-  - Fable, Ultimate: red hair; flaming aura, a halo of twinkling streaks, shake, hair in the wind, a flushing face, hair and aura turning red to orange.
-
-  The motion stops when the system asks for reduced motion.
-
-Cost is a rough estimate from token counts and the price table (`PRICES` in `hooks/register.tsx`), not a bill.
-
-### Settings
-
-In `/config`, or in `~/.claude/settings.json`:
-
-- `language`: the language before any flag is picked, `auto` (English), `en`, `fr`, `es`, `ru` or `he`. The flag at the foot of the agents list cycles 🇺🇸 English, 🇫🇷 French and 🇪🇸 Spanish; its pick is remembered across sessions until you press it again.
-- `formHaiku`, `formSonnet`, `formOpus`, `formFable`: which head each model wears, `base`, `charged`, `super` or `ultimate`.
-
-```json
-{ "pluginConfigs": { "agents-progress": { "options": { "language": "fr", "formHaiku": "super" } } } }
-```
-
-## usage-limits, replaced by saiyan
-
-**[usage-limits](https://github.com/MHermand/SaiyanMod/tree/main/usage-limits#readme)**: a slim band above the prompt with your Claude plan's usage limits, the 5-hour session and the week: how much is used, when each resets, and whether your pace will reach the limit before then, with alerts at 75% and 90%. Its band stacks with this one.
-
-![usage-limits band: 5 h at 33%, resets in 51m; week at 11%, resets in 5d 4h](https://raw.githubusercontent.com/MHermand/SaiyanMod/main/usage-limits/docs/screenshots/on-track-dark.png)
-
-```
-/plugin install usage-limits --marketplace MHermand/SaiyanMod
-```
+It replaces agents-progress and usage-limits, the two mods this marketplace offered before; if you installed one, turn it off, or its band stacks with saiyan's. Its agents view is adapted from [savvy-progress](https://github.com/JohnnyVizz/claude-kit/tree/main/plugins/savvy-progress) by johnnyvizz (MIT).
 
 ## License
 

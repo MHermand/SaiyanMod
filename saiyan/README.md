@@ -2,7 +2,7 @@
 
 A Claude Code mod: one bar above the prompt with two views, your Claude plan's usage limits and the subagents' progress, and a spiky-haired mascot that wears the model and the effort you work with. A click on the mascot picks the model and the effort for your next message.
 
-It replaces [agents-progress](https://github.com/MHermand/SaiyanMod#readme) and [usage-limits](https://github.com/MHermand/SaiyanMod/tree/main/usage-limits#readme): install one or the other, not both, or their bands stack.
+It replaces agents-progress and usage-limits, the two mods this marketplace offered before: if you installed one, turn it off (see Install), or its band stacks with saiyan's. Its agents view is adapted from [savvy-progress](https://github.com/JohnnyVizz/claude-kit/tree/main/plugins/savvy-progress) by johnnyvizz (MIT).
 
 ## Screenshots
 
