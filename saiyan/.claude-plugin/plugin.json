@@ -1,6 +1,6 @@
 {
   "name": "saiyan",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "One bar above the prompt with two views: your plan's usage limits and pace, and the subagents' progress with a spiky-haired mascot per model. Ctrl+A or Option+A opens and closes it; the ⇄ before the fold toggle switches the view, and a click on the mascot picks the model and effort (Option+M, Option+E change them at once).",
   "author": {
     "name": "MHermand",
