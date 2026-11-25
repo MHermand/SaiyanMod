@@ -33,14 +33,6 @@ export const familyOf = (id: unknown): Family | null =>
 
 export const isEffort = (v: unknown): v is Effort => EFFORTS.includes(v as Effort)
 
-/** The next of `list` from `at`, wrapping; from nothing, its first or its last. */
-export const stepIn = <T>(list: readonly T[], at: T | null, dir: 1 | -1): T | null => {
-  if (!list.length) return null
-  const i = at === null ? -1 : list.indexOf(at)
-  if (i < 0) return (dir > 0 ? list[0] : list[list.length - 1]) ?? null
-  return list[(i + dir + list.length) % list.length] ?? null
-}
-
 /** What the model setting offers, in cycle order; all four when it says nothing. */
 export const familiesIn = (options: readonly string[] | undefined): Family[] =>
   options ? FAMILIES.filter(f => options.includes(f)) : [...FAMILIES]
@@ -48,46 +40,3 @@ export const familiesIn = (options: readonly string[] | undefined): Family[] =>
 /** The alias to ask for: the long-context variant while the session uses one, where it exists. */
 export const aliasOf = (family: Family, options: readonly string[] | undefined, usesLong: boolean): string =>
   usesLong && options?.includes(`${family}[1m]`) ? `${family}[1m]` : family
-
-// ---------------------------------------------------------------------------
-// The shortcuts, read off one edit of the prompt box. Option held arrives as
-// `meta`, or, on a Mac whose key event says nothing, as the character it types.
-
-export type Move = { what: 'model' | 'effort'; dir: 1 | -1 }
-
-export type Key = { key: string; ctrl?: true; shift?: true; meta?: true }
-
-// Only characters nobody types by accident: never a letter of a word.
-const BY_CHARACTER: Readonly<Record<string, Move>> = {
-  'µ': { what: 'model', dir: 1 },
-  'Ó': { what: 'model', dir: -1 },
-}
-
-// Control is read in the desktop app alone: a terminal sends Ctrl+M as Enter and uses Ctrl+E to reach the end of the line.
-export const moveOf = (key: Key | undefined, input: string, isDesktop = false): Move | null => {
-  if (key?.meta && !key.ctrl) {
-    const k = key.key.toLowerCase()
-    const dir = key.shift || key.key !== k ? -1 : 1
-    if (k === 'm') return { what: 'model', dir }
-    if (k === 'e') return { what: 'effort', dir }
-    // A French keyboard types ê for Option+E: told from the letter by Option held, once its text is in.
-    if (k === 'ê' && input) return { what: 'effort', dir }
-  }
-  if (isDesktop && key?.ctrl && !key.meta) {
-    const k = key.key.toLowerCase()
-    const dir = key.shift ? -1 : 1
-    if (k === 'm') return { what: 'model', dir }
-    if (k === 'e') return { what: 'effort', dir }
-  }
-  return BY_CHARACTER[input] ?? null
-}
-
-// Option+A opens and closes the bar: a French keyboard types æ for it, one press raising
-// a second edit with no text, which must not count again. Ctrl+A in the desktop app alone,
-// where it reaches the mod only if it moves the caret: never from an empty box.
-export const isBarKey = (key: Key | undefined, input: string, isDesktop = false): boolean => {
-  if (!key) return false
-  const k = key.key.toLowerCase()
-  if (key.meta && !key.ctrl) return k === 'a' || (k === 'æ' && !!input)
-  return isDesktop && !!key.ctrl && !key.meta && k === 'a'
-}
