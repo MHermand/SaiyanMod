@@ -4,7 +4,7 @@ import type { On } from 'claude-code'
 import { headSvg, rowBars, rowGroups, rowShown, rowSvg, textWidth, windowOf } from './limits'
 import { mascotSvg } from './mascot'
 import { quickLine, sessionFigures } from './model'
-import { EFFORTS, isBarKey, moveOf } from './switch'
+import { EFFORTS } from './switch'
 
 const NOW = Date.parse('2026-11-01T00:39:00Z')
 const IN = (min: number) => new Date(NOW + min * 60_000).toISOString()
@@ -105,18 +105,28 @@ const bodyPx = async (ui: any) => {
   return above.map(px).reduce((a: number, b: number) => a + b, 0)
 }
 
-test('the shortcuts: Option+A and, in the desktop app, Ctrl+A open the bar', () => {
-  expect(isBarKey({ key: 'a', meta: true }, '')).toBe(true)
-  expect(isBarKey({ key: 'æ', meta: true }, 'æ')).toBe(true)
-  expect(isBarKey({ key: 'æ', meta: true }, '')).toBe(false)
-  expect(isBarKey({ key: 'a', ctrl: true }, '', true)).toBe(true)
-  expect(isBarKey({ key: 'a', ctrl: true }, '')).toBe(false)
-  expect(isBarKey({ key: 'a' }, 'a')).toBe(false)
-  expect(isBarKey({ key: 'æ' }, 'æ')).toBe(false)
-  expect(isBarKey(undefined, '')).toBe(false)
-  expect(moveOf({ key: 'µ', meta: true }, 'µ')).toEqual({ what: 'model', dir: 1 })
-  expect(moveOf({ key: 'ê', meta: true }, 'ê')).toEqual({ what: 'effort', dir: 1 })
-  expect(moveOf({ key: 'ê' }, 'ê')).toBe(null)
+test('the prompt box keeps its keys: no shortcut hides the bar or moves the model or the effort', FR, async ($, on) => {
+  const { runs, clock, toasts } = engine(on)
+  answerEdits(on)
+  await start($)
+  await $.session.measure(measure(CALM))
+  // Cmd+A selects all, Ctrl+A goes to the line's start, and Option types its character, as anywhere else.
+  const keys = [
+    [{ key: 'a', meta: true }, ''],
+    [{ key: 'a', ctrl: true }, ''],
+    [{ key: 'æ', meta: true }, 'æ'],
+    [{ key: 'µ', meta: true }, 'µ'],
+    [{ key: 'ê', meta: true }, 'ê'],
+    [{ key: 'm', ctrl: true }, ''],
+    [{ key: 'e', ctrl: true }, ''],
+  ] as const
+  for (const [key, input] of keys) expect((await press($, key, input)).text).toBe(`draft${input}`)
+  await clock.advance(600)
+  const ui = await mount($)
+  expect(await ui.find({ key: 'saiyan-hide' })).not.toBe(undefined)
+  await ui.unmount()
+  expect(runs).toEqual([])
+  expect(toasts).toEqual([])
 })
 
 test('the folded limits row: no status dot; the 5-hour group, with the title, as wide as the week', () => {
@@ -283,9 +293,8 @@ test('the mascot: the model gives the hair, the effort the face and its motion',
   await ui.unmount()
 })
 
-test('the bar stands from the session\u2019s start, and after a reload; Ctrl+A closes it, and again opens it', FR, async ($, on) => {
-  const { asked } = engine(on)
-  answerEdits(on)
+test('the bar stands from the session\u2019s start, and after a reload', FR, async ($, on) => {
+  engine(on)
   await start($)
   await $.session.measure(measure(CALM))
   for (const surface of ['desktop', 'terminal'] as const) {
@@ -293,49 +302,24 @@ test('the bar stands from the session\u2019s start, and after a reload; Ctrl+A c
     expect(await ui.find({ key: 'saiyan-hide' })).not.toBe(undefined)
     await ui.unmount()
   }
-
-  const kept = await press($, { key: 'a', ctrl: true })
-  expect(kept.text).toBe('draft')
-  expect(asked).toContain('ui.render')
-  const closed = await mount($)
-  expect(await closed.find({ key: 'saiyan-hide' })).toBe(undefined)
-  await closed.unmount()
-
-  await press($, { key: 'a', ctrl: true })
   const ui = await mount($)
   expect(await alts(ui)).toContain('Limites: Session 5h 33 %, ↻ 51m · Hebdomadaire 11 %, ↻ 5j 4h')
-  await ui.unmount()
 
   // Put away, then the session starts again (a reload): the bar stands again.
-  await press($, { key: 'a', ctrl: true })
+  await ui.press({ key: 'saiyan-hide' })
+  await ui.unmount()
   await start($)
   const back = await mount($)
   expect(await back.find({ key: 'saiyan-hide' })).not.toBe(undefined)
   await back.unmount()
-  await press($, { key: 'a', ctrl: true })
 
   // The terminal shows the same, with the view's name on the switcher.
-  await press($, { key: 'a', meta: true })
   const terminal = await mount($, 'terminal')
   // Before any subagent, the name stands dim, no switch to press.
   expect(await viewOf(terminal)).toBe(undefined)
   expect(await texts(terminal)).toContain('▣ Limites')
   expect((await terminal.find({ type: 'Text', text: /^33 %$/ }))?.text).toBe('33 %')
   await terminal.unmount()
-})
-
-test('one press of Option+A on a French keyboard, two edits: the bar opens and stays', FR, async ($, on) => {
-  engine(on)
-  answerEdits(on)
-  await start($)
-  await $.session.measure(measure(CALM))
-  await press($, { key: 'a', ctrl: true }) // put away first: Option+A brings it back
-  const kept = await press($, { key: 'æ', meta: true }, 'æ')
-  expect(kept.text).toBe('draft')
-  await press($, { key: 'æ', meta: true }, '')
-  const ui = await mount($)
-  expect(await alts(ui)).toMatch(/Limites: Session/)
-  await ui.unmount()
 })
 
 test('/saiyan always shows the bar, on the usage view; ✕ puts it away', FR, async ($, on) => {
@@ -501,35 +485,6 @@ test('the /model and /effort the mod runs print nothing; typed, they print', FR,
     expect((await run(what, { kind: 'plugin', name: 'saiyan' })).text).toBe(undefined)
     expect((await run(what, { kind: 'plugin', name: 'another' })).text).toBe('ok')
   }
-})
-
-test('Option+M and Option+E change the model and the effort at once, a toast says it; the bar stays as it was', FR, async ($, on) => {
-  const { runs, clock, toasts } = engine(on)
-  answerEdits(on)
-  await start($)
-  await $.session.measure(measure(CALM))
-
-  // From a hidden bar: the bar stays hidden; once the presses stop, the change and a toast.
-  await press($, { key: 'a', ctrl: true })
-  await press($, { key: 'µ', meta: true }, 'µ') // opus → fable
-  const ui = await mount($)
-  expect(await ui.find({ key: 'saiyan-hide' })).toBe(undefined)
-  await clock.advance(600)
-  expect(runs).toEqual(['/model fable[1m]'])
-  expect(toasts).toEqual(['Fable'])
-
-  // From the limits view: it stays on show.
-  await command($, 'saiyan')
-  await press($, { key: 'ê', meta: true }, 'ê')
-  expect(await alts(ui)).toMatch(/Limites: Session/)
-  await clock.advance(600)
-  expect(runs[1]).toBe('/effort low')
-  expect(toasts[1]).toBe('Fable · effort faible')
-  await ui.unmount()
-
-  // Plain typing is left alone, accents above all.
-  const typed = await press($, { key: 'ê' }, 'ê')
-  expect(typed.text).toBe('draftê')
 })
 
 test('a press on the mascot opens the choice of model and effort; the next message goes on it, closed or open', FR, async ($, on) => {

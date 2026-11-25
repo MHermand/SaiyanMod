@@ -70,14 +70,10 @@ import {
   FAMILIES,
   familiesIn,
   familyOf,
-  isBarKey,
   isEffort,
-  moveOf,
   NAME,
-  stepIn,
   words as modelWords,
 } from './switch'
-import type { Move } from './switch'
 
 // --- the bar.
 const view = atom({ plugin: 'saiyan', key: 'view' } as const, 'usage')
@@ -93,7 +89,7 @@ const agentsPanel = atom({ plugin: 'saiyan', key: 'agentsPanel' } as const, { li
 const now = atom({ plugin: 'saiyan', key: 'now' } as const, 0)
 // --- the usage view.
 const reading = atom({ plugin: 'saiyan', key: 'reading' } as const, null)
-// --- the model and the effort: the mascot's form, the quick choice, Option+M and Option+E.
+// --- the model and the effort: the mascot's form and the quick choice.
 const current = atom({ plugin: 'saiyan', key: 'current' } as const, { family: null, effort: null, noEffort: [] })
 // The context's fill, the cost and the prompts so far, as the engine last measured them.
 const gauge = atom({ plugin: 'saiyan', key: 'gauge' } as const, {})
@@ -143,12 +139,9 @@ const STATUS_COLOR: Record<Status, string> = { ok: '#5bbe8a', tight: '#e7ae45', 
 
 // Module scope is fine here: session.start sets it again on every (re)load.
 let lang: AgentsLang = 'en'
-let isDesktop = false
 let isAlerting = true
 let ticker: { cancel: () => void } | null = null
 let secondTicker: { cancel: () => void } | null = null
-// Says what Option+M and Option+E chose once their presses stop.
-let toldTimer: { cancel: () => void } | null = null
 // What the quick choice changed, taken as the person's message left: each request of that turn
 // goes on it, and the turn's end makes it the session's.
 let switching: { model?: string; effort?: Effort } | null = null
@@ -269,9 +262,6 @@ const settleSwitch = async ($: EngineInterface) => {
   if (switching === s) switching = null
 }
 
-// Ctrl+A, Option+A: the bar on the usage view, or away.
-const toggleBar = async ($: EngineInterface) => ((await read($, isShown)) ? hideBar($) : showBar($, 'usage'))
-
 // An alert takes a hidden bar; a bar the person put on another view is left as it is.
 const raise = async ($: EngineInterface, v: View) => {
   if (!(await read($, isShown)) || (await read($, view)) === v) await showBar($, v)
@@ -341,7 +331,7 @@ const take = async ($: EngineInterface, limits: Limit[]) => {
 }
 
 // ---------------------------------------------------------------------------
-// The model and the effort: the quick choice under the bar, Option+M and Option+E.
+// The model and the effort: the quick choice under the bar.
 
 // Asks the engine for the change now and waits for it: the message about to leave goes on it.
 const runNow = async ($: EngineInterface, what: 'model' | 'effort', value: string) => {
@@ -383,33 +373,6 @@ const chooseEffort = async ($: EngineInterface, effort: Effort) => {
   apply($, 'effort', effort)
 }
 
-// A toast says what the shortcuts chose, once their presses stop: no view shows it otherwise.
-const tell = ($: EngineInterface, text?: string) => {
-  toldTimer?.cancel()
-  toldTimer = $.clock.after(APPLY_MS, () => {
-    toldTimer = null
-    void read($, current).then(c => {
-      const l = lang3(lang)
-      const said = text ?? (c.family ? (c.effort && !c.noEffort.includes(c.family) ? `${NAME[c.family]} · ${viewWords(l).effort.toLowerCase()} ${effortWord(c.effort, l)}` : NAME[c.family]) : '')
-      if (said) $.ui.toast(said)
-    })
-  })
-}
-
-const move = async ($: EngineInterface, m: Move) => {
-  const c = await read($, current)
-  if (m.what === 'model') {
-    const family = stepIn(families, c.family, m.dir)
-    if (family) await chooseFamily($, family)
-    return tell($)
-  }
-  // A model without an effort setting has nothing to move: the toast says so.
-  if (c.family && c.noEffort.includes(c.family)) return tell($, viewWords(lang3(lang)).offNote)
-  const effort = stepIn(EFFORTS, c.effort, m.dir)
-  if (effort) await chooseEffort($, effort)
-  tell($)
-}
-
 // What the main thread's request runs on, unless a newer choice is on its way.
 const observe = async ($: EngineInterface, model: string, effort: unknown) => {
   const family = familyOf(model)
@@ -449,7 +412,6 @@ export const register: Register = (on, options) => {
 
   on('session.start', async ($, e, next) => {
     const started = await next(e)
-    isDesktop = e.surface === 'desktop'
     await useLang($, await detectLang($, options.language))
     // The bar stands from the session's start, and again after a reload; ✕ puts it away for now.
     await update($, isShown, () => true)
@@ -532,29 +494,13 @@ export const register: Register = (on, options) => {
     return started
   })
 
-  // From the prompt box: Option+M and Option+E move the model and the effort, Option+A
-  // opens and closes the bar; in the desktop app Ctrl+M, Ctrl+E and Ctrl+A do the same.
-  // Each is consumed, so nothing is typed.
-  on('prompt.edit', async ($, e, next) => {
-    const m = moveOf(e.key, e.inputText, isDesktop)
-    if (m) {
-      await move($, m)
-      return { text: e.text, cursor: e.cursor }
-    }
-    if (isBarKey(e.key, e.inputText, isDesktop)) {
-      await toggleBar($)
-      return { text: e.text, cursor: e.cursor }
-    }
-    return next(e)
-  })
-
   on('command.run', { command: 'saiyan' }, async ($, e) => {
     const asked = e.args.trim().toLowerCase()
     await showBar($, isView(asked) ? asked : 'usage')
     return {}
   })
 
-  // The /model and /effort the quick choice and the shortcuts run print nothing: the change went
+  // The /model and /effort the quick choice runs print nothing: the change went
   // with the message already, and a line after the answer read as if it came late. Typed, they print.
   // The text goes, not just its words: an empty text still drew a row under the mod's name, `saiyan: `.
   for (const what of ['model', 'effort'] as const) {
